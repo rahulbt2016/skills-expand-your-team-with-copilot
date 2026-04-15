@@ -472,6 +472,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Build a shareable URL for an activity
+  function buildActivityUrl(activityName) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("activity", activityName);
+    return url.toString();
+  }
+
+  // Close share dropdowns when clicking outside
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".share-dropdown:not(.hidden)").forEach((d) => {
+      d.classList.add("hidden");
+    });
+  });
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -568,6 +582,16 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <div class="share-container">
+          <button class="share-button" data-activity="${name}" aria-label="Share this activity">
+            📤 Share
+          </button>
+          <div class="share-dropdown hidden">
+            <button class="share-option copy-link" data-activity="${name}">🔗 Copy Link</button>
+            <a class="share-option share-twitter" href="#" target="_blank" rel="noopener noreferrer">🐦 Twitter</a>
+            <a class="share-option share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+          </div>
+        </div>
       </div>
     `;
 
@@ -586,6 +610,49 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add share button functionality
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareDropdown = activityCard.querySelector(".share-dropdown");
+
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const activityUrl = buildActivityUrl(name);
+      const shareText = `Check out "${name}" at Mergington High School! ${details.description}`;
+
+      if (navigator.share) {
+        navigator.share({ title: name, text: shareText, url: activityUrl }).catch((error) => {
+          if (error.name !== "AbortError") {
+            showMessage("Sharing failed. Please try copying the link instead.", "error");
+          }
+        });
+      } else {
+        // Update share links before showing dropdown
+        const twitterLink = shareDropdown.querySelector(".share-twitter");
+        const whatsappLink = shareDropdown.querySelector(".share-whatsapp");
+        twitterLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(activityUrl)}`;
+        whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(shareText + " " + activityUrl)}`;
+
+        // Close any other open dropdowns
+        document.querySelectorAll(".share-dropdown:not(.hidden)").forEach((d) => {
+          if (d !== shareDropdown) d.classList.add("hidden");
+        });
+        shareDropdown.classList.toggle("hidden");
+      }
+    });
+
+    const copyLinkButton = activityCard.querySelector(".copy-link");
+    copyLinkButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(buildActivityUrl(name)).then(() => {
+        copyLinkButton.textContent = "✅ Copied!";
+        setTimeout(() => {
+          copyLinkButton.textContent = "🔗 Copy Link";
+        }, 2000);
+      }).catch(() => {
+        showMessage("Could not copy link. Please copy the URL from your browser.", "error");
+      });
+      shareDropdown.classList.add("hidden");
+    });
 
     activitiesList.appendChild(activityCard);
   }
