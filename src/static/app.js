@@ -30,28 +30,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const darkModeIcon = document.getElementById("dark-mode-icon");
   const darkModeLabel = document.getElementById("dark-mode-label");
 
+  // Helper to safely read/write localStorage
+  function getDarkModePreference() {
+    try { return localStorage.getItem("darkMode"); } catch (e) { return null; }
+  }
+  function setDarkModePreference(value) {
+    try { localStorage.setItem("darkMode", value); } catch (e) { /* storage unavailable */ }
+  }
+
   // Initialize dark mode from localStorage
-  if (localStorage.getItem("darkMode") === "enabled") {
+  if (getDarkModePreference() === "enabled") {
     document.documentElement.setAttribute("data-theme", "dark");
     darkModeIcon.textContent = "☀️";
     darkModeLabel.textContent = "Light Mode";
   }
 
   // Toggle dark mode on button click
-  darkModeToggle.addEventListener("click", () => {
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    if (isDark) {
-      document.documentElement.removeAttribute("data-theme");
-      localStorage.setItem("darkMode", "disabled");
-      darkModeIcon.textContent = "🌙";
-      darkModeLabel.textContent = "Dark Mode";
-    } else {
-      document.documentElement.setAttribute("data-theme", "dark");
-      localStorage.setItem("darkMode", "enabled");
-      darkModeIcon.textContent = "☀️";
-      darkModeLabel.textContent = "Light Mode";
-    }
-  });
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener("click", () => {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      if (isDark) {
+        document.documentElement.removeAttribute("data-theme");
+        setDarkModePreference("disabled");
+        darkModeIcon.textContent = "🌙";
+        darkModeLabel.textContent = "Dark Mode";
+      } else {
+        document.documentElement.setAttribute("data-theme", "dark");
+        setDarkModePreference("enabled");
+        darkModeIcon.textContent = "☀️";
+        darkModeLabel.textContent = "Light Mode";
+      }
+    });
+  }
 
   // Activity categories with corresponding colors
   const activityTypes = {
